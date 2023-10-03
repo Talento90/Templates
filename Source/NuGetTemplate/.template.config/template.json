@@ -31,7 +31,7 @@
         },
         {
           "condition": "(!EditorConfig)",
-          "exclude": [ ".editorconfig" ]
+          "exclude": [".editorconfig"]
         },
         {
           "condition": "(!GitHub)",
@@ -45,23 +45,23 @@
         },
         {
           "condition": "(License == \"None\")",
-          "exclude": [ ".github/LICENSE.md" ]
+          "exclude": [".github/LICENSE.md"]
         },
         {
           "condition": "(!ReadMe)",
-          "exclude": [ "README.md" ]
+          "exclude": ["README.md"]
         },
         {
           "condition": "(!Tests)",
-          "exclude": [ "Tests/NuGetTemplate.Test/**/*" ]
+          "exclude": ["Tests/NuGetTemplate.Test/**/*"]
         },
         {
           "condition": "(!AppVeyor)",
-          "exclude": [ "appveyor.yml" ]
+          "exclude": ["appveyor.yml"]
         },
         {
           "condition": "(!AzurePipelines)",
-          "exclude": [ "azure-pipelines.yml" ]
+          "exclude": ["azure-pipelines.yml"]
         },
         {
           "condition": "(!GitHubActions)",
@@ -80,6 +80,10 @@
       "type": "parameter",
       "datatype": "choice",
       "choices": [
+        {
+          "choice": "net7.0",
+          "description": ".NET 7 (net7.0)"
+        },
         {
           "choice": "net6.0",
           "description": ".NET 6 (net6.0)"
@@ -141,7 +145,7 @@
           "description": ".NET Framework 4.6 (net46)"
         }
       ],
-      "defaultValue": "net6.0",
+      "defaultValue": "net7.0",
       "displayName": "Target Framework",
       "description": "The target framework for the project."
     },
@@ -226,6 +230,13 @@
       "valueSource": "Contact",
       "valueTransform": "xmlEncode"
     },
+    "Comments": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "displayName": "Comments",
+      "description": "Require comments on all code."
+    },
     "ReadMe": {
       "type": "parameter",
       "datatype": "bool",
@@ -245,26 +256,8 @@
       "datatype": "choice",
       "choices": [
         {
-          "choice": "AzureDevOpsServer",
-          "displayName": "Azure DevOps Server",
-          "description": "Adds source link."
-        },
-        {
-          "choice": "AzureRepos",
-          "displayName": "Azure Repos",
-          "description": "Adds source link."
-        },
-        {
-          "choice": "Bitbucket",
-          "description": "Adds source link."
-        },
-        {
           "choice": "GitHub",
           "description": "Adds source link, .github directory containing a code of conduct, contributing guide, pull request template and issue templates."
-        },
-        {
-          "choice": "GitLab",
-          "description": "Adds source link."
         },
         {
           "choice": "None",
@@ -275,25 +268,9 @@
       "displayName": "Source Control",
       "description": "Select which source control provider you are using if any, to add provider specific features."
     },
-    "AzureDevOpsServer": {
-      "type": "computed",
-      "value": "(SourceControl == \"AzureDevOpsServer\")"
-    },
-    "AzureRepos": {
-      "type": "computed",
-      "value": "(SourceControl == \"AzureRepos\")"
-    },
-    "Bitbucket": {
-      "type": "computed",
-      "value": "(SourceControl == \"Bitbucket\")"
-    },
     "GitHub": {
       "type": "computed",
       "value": "(SourceControl == \"GitHub\")"
-    },
-    "GitLab": {
-      "type": "computed",
-      "value": "(SourceControl == \"GitLab\")"
     },
     "GitHubUsername": {
       "type": "parameter",

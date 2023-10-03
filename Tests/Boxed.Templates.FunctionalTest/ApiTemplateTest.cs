@@ -37,6 +37,11 @@ public class ApiTemplateTest
     [Trait("IsUsingDotnetRun", "false")]
     [InlineData("ApiDefaults")]
     [InlineData("ApiNoControllers", "controllers=false")]
+    [InlineData("ApiNoCors", "cors=false")]
+    [InlineData("ApiResponseCaching", "response-caching=false")]
+    [InlineData("ApiResponseCompression", "response-compression=false")]
+    [InlineData("ApiHstsPreload", "hsts-preload=false")]
+    [InlineData("ApiNoVersioning", "versioning=false")]
     [InlineData("ApiNoSerilog", "logging=None")]
     [InlineData("ApiNoForwardedHeaders", "forwarded-headers=false")]
     [InlineData("ApiNoHostFiltering", "host-filtering=false")]
@@ -47,6 +52,8 @@ public class ApiTemplateTest
     [InlineData("ApiDockerHub", "docker-registry=DockerHub")]
     [InlineData("ApiCacheRedis", "distributed-cache=Redis")]
     [InlineData("ApiCacheInMemory", "distributed-cache=InMemory")]
+    [InlineData("ApiDataContractSerializer", "xml-formatter=DataContractSerializer")]
+    [InlineData("ApiXmlSerializer", "xml-formatter=XmlSerializer")]
     public async Task RestoreBuildTest_ApiDefaults_SuccessfulAsync(string name, params string[] arguments)
     {
         await InstallTemplateAsync().ConfigureAwait(false);
@@ -55,7 +62,7 @@ public class ApiTemplateTest
             var project = await tempDirectory
                 .DotnetNewAsync(TemplateName, name, DefaultArguments.ToArguments(arguments))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
         }
@@ -89,7 +96,7 @@ public class ApiTemplateTest
             var project = await tempDirectory
                 .DotnetNewAsync(TemplateName, "ApiDefaults", DefaultArguments.ToArguments())
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -179,7 +186,7 @@ public class ApiTemplateTest
                     "ApiHealthCheckFalse",
                     DefaultArguments.ToArguments(new string[] { "health-check=false" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -216,7 +223,7 @@ public class ApiTemplateTest
                     "ApiHttpsEverywhereTrue",
                     DefaultArguments.ToArguments(new string[] { "https-everywhere=true" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -254,7 +261,7 @@ public class ApiTemplateTest
                     "ApiSwaggerFalse",
                     DefaultArguments.ToArguments(new string[] { "swagger=false" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -286,7 +293,7 @@ public class ApiTemplateTest
                     "ApiDockerFalse",
                     DefaultArguments.ToArguments(new string[] { "docker=false" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project.DotnetToolRestoreAsync().ConfigureAwait(false);

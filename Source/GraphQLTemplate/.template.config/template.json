@@ -25,7 +25,7 @@
       "modifiers": [
         {
           "condition": "(!EditorConfig)",
-          "exclude": [".editorconfig"]
+          "exclude": [ ".editorconfig" ]
         },
         {
           "condition": "(!GitHub)",
@@ -39,7 +39,7 @@
         },
         {
           "condition": "(!ReadMe)",
-          "exclude": ["README.md"]
+          "exclude": [ "README.md" ]
         },
         {
           "condition": "(!Mutations)",
@@ -56,13 +56,24 @@
           ]
         },
         {
-          "condition": "(!Redis)",
-          "exclude": ["Source/GraphQLTemplate/Options/RedisOptions.cs"]
+          "condition": "(!DistributedCacheRedis)",
+          "exclude": [
+            "Source/GraphQLTemplate/ConfigureOptions/ConfigureRedisCacheOptions.cs"
+          ]
         },
-        // ReverseProxyWebServer
+        {
+          "condition": "(!Redis)",
+          "exclude": [
+            "Source/GraphQLTemplate/Options/RedisOptions.cs"
+          ]
+        },
+        {
+          "condition": "(!Serilog)",
+          "exclude": [ "Source/GraphQLTemplate/ConfigureOptions/ConfigureRequestLoggingOptions.cs" ]
+        },
         {
           "condition": "(!IIS)",
-          "exclude": ["Source/GraphQLTemplate/web.config"]
+          "exclude": [ "Source/GraphQLTemplate/web.config" ]
         },
         {
           "condition": "(!NGINX)",
@@ -74,28 +85,39 @@
         {
           "condition": "(!Authorization)",
           "exclude": [
+            "Source/GraphQLTemplate/ConfigureOptions/ConfigureAuthorizationOptions.cs",
             "Source/GraphQLTemplate/Constants/AuthorizationPolicyName.cs"
           ]
         },
         {
           "condition": "(!CORS)",
-          "exclude": ["Source/GraphQLTemplate/Constants/CorsPolicyName.cs"]
+          "exclude": [
+            "Source/GraphQLTemplate/ConfigureOptions/ConfigureCorsOptions.cs",
+            "Source/GraphQLTemplate/Constants/CorsPolicyName.cs"
+          ]
         },
         {
           "condition": "(!ResponseCompression)",
-          "exclude": ["Source/GraphQLTemplate/Options/CompressionOptions.cs"]
+          "exclude": [
+            "Source/GraphQLTemplate/ConfigureOptions/ConfigureResponseCompressionOptions.cs",
+            "Source/GraphQLTemplate/Options/CompressionOptions.cs"
+          ]
+        },
+        {
+          "condition": "(!HstsPreload)",
+          "exclude": [ "Source/GraphQLTemplate/ConfigureOptions/ConfigureHstsOptions.cs" ]
         },
         {
           "condition": "(!RobotsTxt)",
-          "exclude": ["Source/GraphQLTemplate/wwwroot/robots.txt"]
+          "exclude": [ "Source/GraphQLTemplate/wwwroot/robots.txt" ]
         },
         {
           "condition": "(!SecurityTxt)",
-          "exclude": ["Source/GraphQLTemplate/wwwroot/.well-known/security.txt"]
+          "exclude": [ "Source/GraphQLTemplate/wwwroot/.well-known/security.txt" ]
         },
         {
           "condition": "(!HumansTxt)",
-          "exclude": ["Source/GraphQLTemplate/wwwroot/humans.txt"]
+          "exclude": [ "Source/GraphQLTemplate/wwwroot/humans.txt" ]
         },
         {
           "condition": "(!HealthCheck)",
@@ -105,11 +127,11 @@
         },
         {
           "condition": "(!IntegrationTest)",
-          "exclude": ["Tests/ApiTemplate.IntegrationTest/**/*"]
+          "exclude": [ "Tests/ApiTemplate.IntegrationTest/**/*" ]
         },
         {
           "condition": "(!Docker)",
-          "exclude": ["Source/GraphQLTemplate/Dockerfile", ".dockerignore"]
+          "exclude": [ "Source/GraphQLTemplate/Dockerfile", ".dockerignore" ]
         },
         {
           "condition": "(!GitHubActions)",
@@ -124,7 +146,7 @@
           "condition": "(!OpenTelemetry)",
           "exclude": [
             "Source/GraphQLTemplate/Constants/OpenTelemetryAttributeName.cs",
-            "Source/GraphQLTemplate/Constants/OpenTelemetryHttpFlavour.cs"
+            "Source/GraphQLTemplate/TracerProviderBuilderExtensions.cs"
           ]
         }
       ]
@@ -307,6 +329,7 @@
         }
       ],
       "defaultValue": "None",
+      "displayName": "Reverse Proxy Web Server",
       "description": "The internet facing reverse proxy web server you want to use in front of the primary web server to host the site."
     },
     "IIS": {
@@ -331,6 +354,7 @@
         }
       ],
       "defaultValue": "None",
+      "displayName": "Cloud Provider",
       "description": "Select which cloud provider you are using if any, to add cloud specific features."
     },
     "Azure": {
@@ -545,8 +569,9 @@
     "IISExpressHttpsPort": {
       "type": "parameter",
       "datatype": "integer",
-      "description": "Port number to use for the IIS Express HTTPS endpoint in launchSettings.json (Must be between 44300 and 44399).",
-      "defaultValue": "44300"
+      "defaultValue": "44300",
+      "displayName": "IIS Express HTTPS Port",
+      "description": "Port number to use for the IIS Express HTTPS endpoint in launchSettings.json (Must be between 44300 and 44399)."
     },
     "IISExpressHttpsPortConstant": {
       "type": "generated",

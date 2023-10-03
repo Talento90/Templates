@@ -5,10 +5,11 @@
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <DotnetFramework>false</DotnetFramework>
     <EditorConfig>true</EditorConfig>
+    <ImplicitUsings>true</ImplicitUsings>
     <MIT>true</MIT>
     <Nullable>true</Nullable>
     <StyleCop>true</StyleCop>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <!--#endif-->
 
@@ -38,10 +39,10 @@
   </PropertyGroup>
 
   <ItemGroup Label="Package References">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" Version="1.0.2" Condition="'$(DotnetFramework)' == 'true'" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" Version="17.0.64" />
-    <PackageReference Include="MinVer" PrivateAssets="all" Version="2.5.0" />
-    <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" Version="1.2.0-beta.354" Condition="'$(StyleCop)' == 'true'" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" Version="1.0.3" Condition="'$(DotnetFramework)' == 'true'" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" Version="17.7.30" />
+    <PackageReference Include="MinVer" PrivateAssets="all" Version="4.3.0" />
+    <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" Version="1.2.0-beta.507" Condition="'$(StyleCop)' == 'true'" />
   </ItemGroup>
 
 </Project>

@@ -32,6 +32,7 @@ public class NuGetTemplateTest
     [InlineData("NuGetAnalysisNone", "analysis-mode=AllDisabledByDefault")]
     [InlineData("NuGetNoImplicitUsings", "implicit-usings=false")]
     [InlineData("NuGetTrimmable", "trimmable=true")]
+    [InlineData("NuGetNoComments", "comments=false")]
     public async Task RestoreBuildTest_NuGetDefaults_SuccessfulAsync(string name, params string[] arguments)
     {
         await InstallTemplateAsync().ConfigureAwait(false);
@@ -40,7 +41,7 @@ public class NuGetTemplateTest
             var project = await tempDirectory
                 .DotnetNewAsync(TemplateName, name, arguments.ToArguments())
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
 
             if (!arguments.Contains("framework=net472") ||
@@ -87,7 +88,7 @@ public class NuGetTemplateTest
             var project = await tempDirectory
                 .DotnetNewAsync(TemplateName, name, arguments.ToArguments())
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project.DotnetToolRestoreAsync().ConfigureAwait(false);
@@ -113,7 +114,7 @@ public class NuGetTemplateTest
                     "NuGetSignFalse",
                     new string[] { "sign=false" }.ToArguments())
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
 

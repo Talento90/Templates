@@ -3,19 +3,16 @@ namespace ApiTemplate.IntegrationTest.Controllers;
 using System.Net;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
-using System.Text;
 using ApiTemplate.ViewModels;
 using Boxed.AspNetCore;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Newtonsoft.Json;
 using Xunit;
 #if Serilog
 using Xunit.Abstractions;
 #endif
 
-public class CarsControllerTest : CustomWebApplicationFactory<Program>
+public class CarsControllerTest : AppWebApplicationFactory<Program>
 {
     private readonly HttpClient client;
     private readonly MediaTypeFormatterCollection formatters;
@@ -95,7 +92,14 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
     [Fact]
     public async Task Get_CarFound_Returns200OkAsync()
     {
-        var car = new Models.Car() { Modified = new DateTimeOffset(2000, 1, 2, 3, 4, 5, TimeSpan.FromHours(6)) };
+        var car = new Models.Car()
+        {
+            CarId = 1,
+            Cylinders = 4,
+            Make = "Honda",
+            Model = "Civic",
+            Modified = new DateTimeOffset(2000, 1, 2, 3, 4, 5, TimeSpan.FromHours(6)),
+        };
         this.CarRepositoryMock.Setup(x => x.GetAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(car);
 
         var response = await this.client.GetAsync(new Uri("/cars/1", UriKind.Relative)).ConfigureAwait(false);
@@ -104,6 +108,15 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         Assert.Equal(new DateTimeOffset(2000, 1, 2, 3, 4, 5, TimeSpan.FromHours(6)), response.Content.Headers.LastModified);
         Assert.Equal(ContentType.RestfulJson, response.Content.Headers.ContentType?.MediaType);
         var carViewModel = await response.Content.ReadAsAsync<Car>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(1, carViewModel.CarId);
+        Assert.Equal(4, carViewModel.Cylinders);
+        Assert.Equal("Honda", carViewModel.Make);
+        Assert.Equal("Civic", carViewModel.Model);
+#if HttpsEverywhere
+        Assert.Equal(new Uri("https://localhost/cars/1"), carViewModel.Url);
+#else
+        Assert.Equal(new Uri("http://localhost/cars/1"), carViewModel.Url);
+#endif
     }
 
     [Fact]
@@ -129,7 +142,7 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.NotAcceptable, response.StatusCode);
         // Note: ASP.NET Core should be automatically returning a ProblemDetails response but is returning an empty
-        // response body instead. See https://github.com/aspnet/AspNetCore/issues/16889
+        // response body instead. This will be fixed in .NET 7. See https://github.com/aspnet/AspNetCore/issues/16889
     }
 
     [Fact]
@@ -333,16 +346,37 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
             .ConfigureAwait(false);
     }
 
+    [Theory]
+    [InlineData("First")]
+    [InlineData("Last")]
+    public async Task GetPage_Invalid_Returns400BadRequestAsync(string direction)
+    {
+        var response = await this.client
+            .GetAsync(new Uri($"/cars?{direction}=21", UriKind.Relative))
+            .ConfigureAwait(false);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+        Assert.Equivalent(
+            new Dictionary<string, string[]>()
+            {
+                [direction] = new string[] { $"'{direction}' must be between 1 and 20. You entered 21." },
+            },
+            problemDetails.Errors);
+    }
+
     [Fact]
     public async Task PostCar_Valid_Returns201CreatedAsync()
     {
         var saveCar = new SaveCar()
         {
-            Cylinders = 2,
+            Cylinders = 4,
             Make = "Honda",
             Model = "Civic",
         };
-        var car = new Models.Car() { CarId = 1 };
+        var car = new Models.Car() { CarId = 1, Cylinders = 4, Make = "Honda", Model = "Civic" };
         this.ClockServiceMock.SetupGet(x => x.UtcNow).Returns(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero));
         this.CarRepositoryMock
             .Setup(x => x.AddAsync(It.IsAny<Models.Car>(), It.IsAny<CancellationToken>()))
@@ -352,11 +386,20 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.Equal(ContentType.RestfulJson, response.Content.Headers.ContentType?.MediaType);
-        var carViewModel = await response.Content.ReadAsAsync<Car>(this.formatters).ConfigureAwait(false);
 #if HttpsEverywhere
         Assert.Equal(new Uri("https://localhost/cars/1"), response.Headers.Location);
 #else
         Assert.Equal(new Uri("http://localhost/cars/1"), response.Headers.Location);
+#endif
+        var carViewModel = await response.Content.ReadAsAsync<Car>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(1, carViewModel.CarId);
+        Assert.Equal(4, carViewModel.Cylinders);
+        Assert.Equal("Honda", carViewModel.Make);
+        Assert.Equal("Civic", carViewModel.Model);
+#if HttpsEverywhere
+        Assert.Equal(new Uri("https://localhost/cars/1"), carViewModel.Url);
+#else
+        Assert.Equal(new Uri("http://localhost/cars/1"), carViewModel.Url);
 #endif
     }
 
@@ -366,8 +409,17 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         var response = await this.client.PostAsJsonAsync("cars", new SaveCar()).ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problemDetails = await response.Content.ReadAsAsync<ProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
         Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+        Assert.Equivalent(
+            new Dictionary<string, string[]>()
+            {
+                [nameof(SaveCar.Cylinders)] = new string[] { "'Cylinders' must be between 1 and 20. You entered 0." },
+                [nameof(SaveCar.Make)] = new string[] { "'Make' must not be empty." },
+                [nameof(SaveCar.Model)] = new string[] { "'Model' must not be empty." },
+            },
+            problemDetails.Errors);
     }
 
     [Fact]
@@ -381,8 +433,15 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         var response = await this.client.SendAsync(request).ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problemDetails = await response.Content.ReadAsAsync<ProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
         Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+        Assert.Equivalent(
+            new Dictionary<string, string[]>()
+            {
+                [string.Empty] = new string[] { "A non-empty request body is required." },
+            },
+            problemDetails.Errors);
     }
 
     [Fact]
@@ -396,8 +455,10 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         var response = await this.client.SendAsync(request).ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
-        var problemDetails = await response.Content.ReadAsAsync<ProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
         Assert.Equal(StatusCodes.Status415UnsupportedMediaType, problemDetails.Status);
+        Assert.Empty(problemDetails.Errors);
     }
 
     [Fact]
@@ -405,7 +466,7 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
     {
         var saveCar = new SaveCar()
         {
-            Cylinders = 2,
+            Cylinders = 4,
             Make = "Honda",
             Model = "Civic",
         };
@@ -421,6 +482,15 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(ContentType.RestfulJson, response.Content.Headers.ContentType?.MediaType);
         var carViewModel = await response.Content.ReadAsAsync<Car>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(1, carViewModel.CarId);
+        Assert.Equal(4, carViewModel.Cylinders);
+        Assert.Equal("Honda", carViewModel.Make);
+        Assert.Equal("Civic", carViewModel.Model);
+#if HttpsEverywhere
+        Assert.Equal(new Uri("https://localhost/cars/1"), carViewModel.Url);
+#else
+        Assert.Equal(new Uri("http://localhost/cars/1"), carViewModel.Url);
+#endif
     }
 
     [Fact]
@@ -437,8 +507,10 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         var response = await this.client.PutAsJsonAsync("cars/999", saveCar).ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        var problemDetails = await response.Content.ReadAsAsync<ProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
         Assert.Equal(StatusCodes.Status404NotFound, problemDetails.Status);
+        Assert.Empty(problemDetails.Errors);
     }
 
     [Fact]
@@ -447,64 +519,76 @@ public class CarsControllerTest : CustomWebApplicationFactory<Program>
         var response = await this.client.PutAsJsonAsync("cars/1", new SaveCar()).ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problemDetails = await response.Content.ReadAsAsync<ProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
         Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+        Assert.Equal(3, problemDetails.Errors.Count);
+        Assert.Equal(new string[] { "'Cylinders' must be between 1 and 20. You entered 0." }, problemDetails.Errors[nameof(SaveCar.Cylinders)]);
+        Assert.Equal(new string[] { "'Make' must not be empty." }, problemDetails.Errors[nameof(SaveCar.Make)]);
+        Assert.Equal(new string[] { "'Model' must not be empty." }, problemDetails.Errors[nameof(SaveCar.Model)]);
     }
 
     [Fact]
     public async Task PatchCar_CarNotFound_Returns404NotFoundAsync()
     {
-        var patch = new JsonPatchDocument<SaveCar>();
-        patch.Remove(x => x.Make);
-        var json = JsonConvert.SerializeObject(patch);
-        using var content = new StringContent(json, Encoding.UTF8, ContentType.JsonPatch);
         this.CarRepositoryMock.Setup(x => x.GetAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync((Models.Car?)null);
 
         var response = await this.client
-            .PatchAsync(new Uri("cars/999", UriKind.Relative), content)
+            .PatchAsJsonAsync(new Uri("cars/999", UriKind.Relative), new { Make = (string?)null })
             .ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        var problemDetails = await response.Content.ReadAsAsync<ProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
         Assert.Equal(StatusCodes.Status404NotFound, problemDetails.Status);
+        Assert.Empty(problemDetails.Errors);
     }
 
     [Fact]
     public async Task PatchCar_InvalidCar_Returns400BadRequestAsync()
     {
-        var patch = new JsonPatchDocument<SaveCar>();
-        patch.Remove(x => x.Make);
-        var json = JsonConvert.SerializeObject(patch);
-        using var content = new StringContent(json, Encoding.UTF8, ContentType.JsonPatch);
-        var car = new Models.Car();
+        var car = new Models.Car() { CarId = 1, Cylinders = 4, Make = "Honda", Model = "Civic" };
         this.CarRepositoryMock.Setup(x => x.GetAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(car);
 
         var response = await this.client
-            .PatchAsync(new Uri("cars/1", UriKind.Relative), content)
+            .PatchAsJsonAsync(new Uri("cars/1", UriKind.Relative), new { Make = (string?)null })
             .ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ContentType.ProblemJson, response.Content.Headers.ContentType?.MediaType);
+        var problemDetails = await response.Content.ReadAsAsync<ValidationProblemDetails>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(StatusCodes.Status400BadRequest, problemDetails.Status);
+        Assert.Equivalent(
+            new Dictionary<string, string[]>()
+            {
+                [nameof(SaveCar.Make)] = new string[] { "'Make' must not be empty." },
+            },
+            problemDetails.Errors);
     }
 
     [Fact]
     public async Task PatchCar_ValidCar_Returns200OkAsync()
     {
-        var patch = new JsonPatchDocument<SaveCar>();
-        patch.Add(x => x.Model, "Civic Type-R");
-        var json = JsonConvert.SerializeObject(patch);
-        using var content = new StringContent(json, Encoding.UTF8, ContentType.JsonPatch);
-        var car = new Models.Car() { CarId = 1, Cylinders = 2, Make = "Honda", Model = "Civic" };
+        var car = new Models.Car() { CarId = 1, Cylinders = 4, Make = "Honda", Model = "Civic" };
         this.CarRepositoryMock.Setup(x => x.GetAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(car);
         this.ClockServiceMock.SetupGet(x => x.UtcNow).Returns(new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero));
         this.CarRepositoryMock.Setup(x => x.UpdateAsync(car, It.IsAny<CancellationToken>())).ReturnsAsync(car);
 
         var response = await this.client
-            .PatchAsync(new Uri("cars/1", UriKind.Relative), content)
+            .PatchAsJsonAsync(new Uri("cars/1", UriKind.Relative), new { Model = "Civic Type-R" })
             .ConfigureAwait(false);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var carViewModel = await response.Content.ReadAsAsync<Car>(this.formatters).ConfigureAwait(false);
+        Assert.Equal(1, carViewModel.CarId);
+        Assert.Equal(4, carViewModel.Cylinders);
+        Assert.Equal("Honda", carViewModel.Make);
         Assert.Equal("Civic Type-R", carViewModel.Model);
+#if HttpsEverywhere
+        Assert.Equal(new Uri("https://localhost/cars/1"), carViewModel.Url);
+#else
+        Assert.Equal(new Uri("http://localhost/cars/1"), carViewModel.Url);
+#endif
     }
 
     private static List<Models.Car> GetCars() =>

@@ -8,6 +8,10 @@ using HotChocolate.AspNetCore;
 #if HealthCheck
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 #endif
+using Microsoft.Extensions.DependencyInjection;
+#if Serilog
+using Serilog;
+#endif
 
 /// <summary>
 /// The main start-up class for the application.
@@ -42,40 +46,49 @@ public class Startup
             // Add Azure Application Insights data collection services to the services container.
             .AddApplicationInsightsTelemetry(this.configuration)
 #endif
-#if DistributedCacheRedis
-            .AddCustomCaching(this.webHostEnvironment, this.configuration)
-#else
-            .AddCustomCaching()
+            .AddMemoryCache()
+#if DistributedCacheInMemory
+            .AddDistributedMemoryCache()
+#elif DistributedCacheRedis
+            .AddStackExchangeRedisCache(options => { })
 #endif
 #if CORS
-            .AddCustomCors()
+            .AddCors()
 #endif
-            .AddCustomOptions(this.configuration)
-            .AddCustomRouting()
 #if ResponseCompression
-            .AddCustomResponseCompression(this.configuration)
+            .AddResponseCompression()
 #endif
+            .AddRouting()
 #if HttpsEverywhere
-            .AddCustomStrictTransportSecurity()
+            .AddHsts(options => { })
 #endif
 #if HealthCheck
+#if Redis
             .AddCustomHealthChecks(this.webHostEnvironment, this.configuration)
+#else
+            .AddCustomHealthChecks()
+#endif
 #endif
 #if OpenTelemetry
-            .AddCustomOpenTelemetryTracing(this.webHostEnvironment)
+            .AddOpenTelemetry()
+                .WithTracing(builder => builder.AddCustomTracing(this.webHostEnvironment))
+            .Services
 #endif
             .AddHttpContextAccessor()
             .AddServerTiming()
-            .AddControllers()
-                .AddCustomMvcOptions(this.configuration)
-            .Services
 #if Authorization
-            .AddCustomAuthorization()
+            .AddAuthorization()
 #endif
 #if Redis
             .AddCustomRedis(this.webHostEnvironment, this.configuration)
 #endif
+#if (PersistedQueries || Subscriptions)
             .AddCustomGraphQL(this.webHostEnvironment, this.configuration)
+#else
+            .AddCustomGraphQL(this.configuration)
+#endif
+            .AddCustomOptions(this.configuration)
+            .AddCustomConfigureOptions()
             .AddProjectMappers()
             .AddProjectServices()
             .AddProjectRepositories();
@@ -113,10 +126,11 @@ public class Startup
 #if Subscriptions
             .UseWebSockets()
 #endif
-            .UseStaticFilesWithCacheControl()
+            .UseStaticFiles()
 #if Serilog
-            .UseCustomSerilogRequestLogging()
+            .UseSerilogRequestLogging()
 #endif
+            .UseRequestCanceled()
             .UseEndpoints(
                 builder =>
                 {

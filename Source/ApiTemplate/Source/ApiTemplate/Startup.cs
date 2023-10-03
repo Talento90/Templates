@@ -4,10 +4,16 @@ namespace ApiTemplate;
 using ApiTemplate.Constants;
 #endif
 using Boxed.AspNetCore;
+#if Controllers
+using FluentValidation;
+#endif
 #if HealthCheck
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 #endif
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+#if Serilog
+using Serilog;
+#endif
 
 /// <summary>
 /// The main start-up class for the application.
@@ -42,43 +48,50 @@ public class Startup
             // Add Azure Application Insights data collection services to the services container.
             .AddApplicationInsightsTelemetry(this.configuration)
 #endif
-#if DistributedCacheRedis
-            .AddCustomCaching(this.webHostEnvironment, this.configuration)
-#elif DistributedCacheInMemory
-            .AddCustomCaching()
+#if DistributedCacheInMemory
+            .AddDistributedMemoryCache()
+#elif DistributedCacheRedis
+            .AddStackExchangeRedisCache(options => { })
 #endif
 #if CORS
-            .AddCustomCors()
+            .AddCors()
 #endif
-            .AddCustomOptions(this.configuration)
-            .AddCustomRouting()
+#if ResponseCompression
+            .AddResponseCompression()
+#endif
+            .AddRouting()
 #if ResponseCaching
             .AddResponseCaching()
 #endif
-#if ResponseCompression
-            .AddCustomResponseCompression(this.configuration)
-#endif
 #if HttpsEverywhere
-            .AddCustomStrictTransportSecurity()
+            .AddHsts(options => { })
 #endif
 #if HealthCheck
+#if Redis
+            .AddCustomHealthChecks(this.webHostEnvironment, this.configuration)
+#else
             .AddCustomHealthChecks()
 #endif
+#endif
 #if OpenTelemetry
-            .AddCustomOpenTelemetryTracing(this.webHostEnvironment)
+            .AddOpenTelemetry()
+                .WithTracing(builder => builder.AddCustomTracing(this.webHostEnvironment))
+            .Services
 #endif
 #if Swagger
-            .AddCustomSwagger()
+            .AddSwaggerGen()
 #endif
             .AddHttpContextAccessor()
             // Add useful interface for accessing the ActionContext outside a controller.
             .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
 #if Versioning
-            .AddCustomApiVersioning()
+            .AddApiVersioning()
+            .AddVersionedApiExplorer()
 #endif
             .AddServerTiming()
-            .AddControllers()
-            .AddCustomJsonOptions(this.webHostEnvironment)
+#if Controllers
+            .AddValidatorsFromAssemblyContaining<Startup>(lifetime: ServiceLifetime.Singleton)
+            .AddControllers(x => x.ModelValidatorProviders.Clear())
 #if DataContractSerializer
             // Adds the XML input and output formatter using the DataContractSerializer.
             .AddXmlDataContractSerializerFormatters()
@@ -86,15 +99,16 @@ public class Startup
             // Adds the XML input and output formatter using the XmlSerializer.
             .AddXmlSerializerFormatters()
 #endif
-#if Controllers
-            .AddCustomMvcOptions(this.configuration)
             .Services
+            .AddCustomOptions(this.configuration)
+            .AddCustomConfigureOptions()
             .AddProjectCommands()
             .AddProjectMappers()
             .AddProjectRepositories()
             .AddProjectServices();
 #else
-            .AddCustomMvcOptions(this.configuration);
+            .AddCustomOptions(this.configuration)
+            .AddCustomConfigureOptions();
 #endif
 
     /// <summary>
@@ -130,10 +144,11 @@ public class Startup
             .UseIf(
                 this.webHostEnvironment.IsDevelopment(),
                 x => x.UseDeveloperExceptionPage())
-            .UseStaticFilesWithCacheControl()
+            .UseStaticFiles()
 #if Serilog
-            .UseCustomSerilogRequestLogging()
+            .UseSerilogRequestLogging()
 #endif
+            .UseRequestCanceled()
             .UseEndpoints(
                 builder =>
                 {
@@ -154,11 +169,11 @@ public class Startup
                     builder.MapHealthChecks("/status/self", new HealthCheckOptions() { Predicate = _ => false });
 #endif
 #if Swagger
+                    builder.MapSwagger();
                 })
-            .UseSwagger()
             .UseIf(
                 this.webHostEnvironment.IsDevelopment(),
-                x => x.UseCustomSwaggerUI());
+                x => x.UseSwaggerUI());
 #else
                 });
 #endif

@@ -23,6 +23,7 @@ The NuGet package project template uses `dotnet new` to enable you to turn featu
 - **Author** - The name of the author of the project which determines the assembly author and copyright information.
 - **Tags** - A semi-colon `;` delimited list of tags for the NuGet package.
 - **Contact** - The contact details to use if someone wants to contact you about a security vulnerability or code of conduct issues.
+- **Comments** (Default=On) - Require all members to be commented.
 - **ReadMe** (Default=On) - Add a README.md markdown file describing the project.
 - **EditorConfig** (Default=On) - Add a .editorconfig file to set a fixed code style.
 - **License** - The legal license applied to the source code in this project.
@@ -41,11 +42,7 @@ The NuGet package project template uses `dotnet new` to enable you to turn featu
 #### Source Control
 
 - **SourceControl** - Select which source control provider you are using if any, to add provider specific features.
-  - **AzureDevOpsServer** - Adds source link.
-  - **AzureRepos** - Adds source link.
-  - **Bitbucket** - Adds source link.
   - **GitHub** (Default) - Adds source link, .github directory containing a code of conduct, contributing guide, pull request template and issue templates.
-  - **GitLab** - Adds source link.
   - **None** - No source control provider is being used.
 - **GitHubUsername** - Your GitHub username or organisation name that the project lives under.
 - **GitHubProject** - The name of your GitHub project.

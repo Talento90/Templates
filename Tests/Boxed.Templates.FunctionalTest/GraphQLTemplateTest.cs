@@ -32,6 +32,11 @@ public class GraphQLTemplateTest
     [Trait("IsUsingDocker", "false")]
     [Trait("IsUsingDotnetRun", "false")]
     [InlineData("GraphQLTDefaults")]
+    [InlineData("GraphQLNoCors", "cors=false")]
+    [InlineData("GraphQLNoResponseCompression", "response-compression=false")]
+    [InlineData("GraphQLDistributedCacheRedis", "distributed-cache=Redis")]
+    [InlineData("GraphQLDistributedCacheInMemory", "distributed-cache=InMemory")]
+    [InlineData("GraphQLNoHstsPreload", "hsts-preload=false")]
     [InlineData("GraphQLNoSerilog", "logging=None")]
     [InlineData("GraphQLTNoForwardedHeaders", "forwarded-headers=false")]
     [InlineData("GraphQLTNoHostFiltering", "host-filtering=false")]
@@ -54,7 +59,7 @@ public class GraphQLTemplateTest
             var project = await tempDirectory
                 .DotnetNewAsync(TemplateName, name, DefaultArguments.ToArguments(arguments))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
         }
@@ -88,7 +93,7 @@ public class GraphQLTemplateTest
             var project = await tempDirectory
                 .DotnetNewAsync(TemplateName, "GraphQLTDefaults", DefaultArguments.ToArguments())
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -150,7 +155,7 @@ public class GraphQLTemplateTest
                     "GraphQLTHealthCheckFalse",
                     DefaultArguments.ToArguments(new string[] { "health-check=false" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -187,7 +192,7 @@ public class GraphQLTemplateTest
                     "GraphQLTHttpsEverywhereTrue",
                     DefaultArguments.ToArguments(new string[] { "https-everywhere=true" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project
@@ -225,7 +230,7 @@ public class GraphQLTemplateTest
                     "GraphQLDockerFalse",
                     DefaultArguments.ToArguments(new string[] { "docker=false" }))
                 .ConfigureAwait(false);
-            await project.DotnetRestoreAsync().ConfigureAwait(false);
+            await project.DotnetRestoreWithRetryAsync().ConfigureAwait(false);
             await project.DotnetBuildAsync().ConfigureAwait(false);
             await project.DotnetTestAsync().ConfigureAwait(false);
             await project.DotnetToolRestoreAsync().ConfigureAwait(false);

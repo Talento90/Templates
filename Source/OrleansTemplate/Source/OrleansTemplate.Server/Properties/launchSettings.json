@@ -15,6 +15,9 @@
       "launchBrowser": true,
       "externalUrlConfiguration": true,
       "launchUrl": "http://localhost:8080",
+      //#if (HealthCheck)
+      "applicationUrl": "http://localhost:5000",
+      //#endif
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }
@@ -25,6 +28,9 @@
       "launchBrowser": true,
       "externalUrlConfiguration": true,
       "launchUrl": "http://localhost:8080",
+      //#if (HealthCheck)
+      "applicationUrl": "http://localhost:5000",
+      //#endif
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Production"
       }
@@ -36,7 +42,8 @@
       "workingDirectory": "$(ProjectDir)",
       "commandLineArgs": "watch",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development",
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
       }
     },
     "Watch Production (CTRL+F5)": {
@@ -45,7 +52,8 @@
       "workingDirectory": "$(ProjectDir)",
       "commandLineArgs": "watch",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Production"
+        "DOTNET_ENVIRONMENT": "Production",
+        "DOTNET_WATCH_RESTART_ON_RUDE_EDIT": "true"
       }
     }
   }

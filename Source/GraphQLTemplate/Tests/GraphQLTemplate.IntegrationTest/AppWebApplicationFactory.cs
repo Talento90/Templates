@@ -1,14 +1,14 @@
-namespace ApiTemplate.IntegrationTest;
+namespace GraphQLTemplate.IntegrationTest;
 
-using ApiTemplate.Options;
-#if Controllers
-using ApiTemplate.Repositories;
-using ApiTemplate.Services;
-#endif
+using System;
+using System.Globalization;
+using System.Net.Http;
+using GraphQLTemplate.Options;
+using GraphQLTemplate.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-#if Controllers
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
-#endif
 #if Serilog
 using Serilog;
 using Serilog.Events;
@@ -17,38 +17,38 @@ using Serilog.Events;
 using Xunit.Abstractions;
 #endif
 
-public class CustomWebApplicationFactory<TEntryPoint> : WebApplicationFactory<TEntryPoint>
+public class AppWebApplicationFactory<TEntryPoint> : WebApplicationFactory<TEntryPoint>
     where TEntryPoint : class
 {
 #if Serilog
-    public CustomWebApplicationFactory(ITestOutputHelper testOutputHelper)
-#else
-    public CustomWebApplicationFactory()
-#endif
+    public AppWebApplicationFactory(ITestOutputHelper testOutputHelper)
     {
         this.ClientOptions.AllowAutoRedirect = false;
 #if HttpsEverywhere
         this.ClientOptions.BaseAddress = new Uri("https://localhost");
 #endif
-#if Serilog
 
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Debug()
-            .WriteTo.TestOutput(testOutputHelper, LogEventLevel.Verbose)
+            .WriteTo.Debug(formatProvider: CultureInfo.InvariantCulture)
+            .WriteTo.TestOutput(testOutputHelper, LogEventLevel.Verbose, formatProvider: CultureInfo.InvariantCulture)
             .CreateLogger();
-#endif
     }
+#elif HttpsEverywhere
+    public CustomWebApplicationFactory()
+    {
+        this.ClientOptions.AllowAutoRedirect = false;
+        this.ClientOptions.BaseAddress = new Uri("https://localhost");
+    }
+#else
+    public CustomWebApplicationFactory() => this.ClientOptions.AllowAutoRedirect = false;
+#endif
 
     public ApplicationOptions ApplicationOptions { get; private set; } = default!;
 
-#if Controllers
-    public Mock<ICarRepository> CarRepositoryMock { get; } = new Mock<ICarRepository>(MockBehavior.Strict);
-
     public Mock<IClockService> ClockServiceMock { get; } = new Mock<IClockService>(MockBehavior.Strict);
 
-    public void VerifyAllMocks() => Mock.VerifyAll(this.CarRepositoryMock, this.ClockServiceMock);
+    public void VerifyAllMocks() => Mock.VerifyAll(this.ClockServiceMock);
 
-#endif
     protected override void ConfigureClient(HttpClient client)
     {
         using (var serviceScope = this.Services.CreateScope())
@@ -65,18 +65,12 @@ public class CustomWebApplicationFactory<TEntryPoint> : WebApplicationFactory<TE
             .UseEnvironment(Constants.EnvironmentName.Test)
             .ConfigureServices(this.ConfigureServices);
 
-    protected virtual void ConfigureServices(IServiceCollection services)
-    {
-#if DistributedCacheRedis
-        services.AddDistributedMemoryCache();
-#endif
-#if Controllers
+    protected virtual void ConfigureServices(IServiceCollection services) =>
         services
-            .AddSingleton(this.CarRepositoryMock.Object)
-            .AddSingleton(this.ClockServiceMock.Object);
+#if DistributedCacheRedis
+            .AddDistributedMemoryCache()
 #endif
-    }
-#if Controllers
+            .AddSingleton(this.ClockServiceMock.Object);
 
     protected override void Dispose(bool disposing)
     {
@@ -87,5 +81,4 @@ public class CustomWebApplicationFactory<TEntryPoint> : WebApplicationFactory<TE
 
         base.Dispose(disposing);
     }
-#endif
 }

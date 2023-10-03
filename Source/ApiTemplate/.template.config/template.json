@@ -27,6 +27,7 @@
           "condition": "(!Controllers)",
           "exclude": [
             "Source/ApiTemplate/Commands/**/*",
+            "Source/ApiTemplate/ConfigureOptions/ConfigureMvcOptions.cs",
             "Source/ApiTemplate/Constants/ApiVersionName",
             "Source/ApiTemplate/Constants/CarsControllerRoute.cs",
             "Source/ApiTemplate/Constants/ControllerName.cs",
@@ -35,7 +36,9 @@
             "Source/ApiTemplate/Models/**/*",
             "Source/ApiTemplate/Repositories/**/*",
             "Source/ApiTemplate/Services/**/*",
+            "Source/ApiTemplate/Validators/**/*",
             "Source/ApiTemplate/ViewModels/**/*",
+            "Source/ApiTemplate/AppJsonSerializerContext.cs",
             "Source/ApiTemplate/ProjectServiceCollectionExtensions.cs",
             "Tests/ApiTemplate.IntegrationTest/Controllers/**/*"
           ]
@@ -61,20 +64,29 @@
         {
           "condition": "(!Swagger)",
           "exclude": [
-            "Source/ApiTemplate/OperationFilters/**/*",
-            "Source/ApiTemplate/ConfigureSwaggerOptions.cs"
+            "Source/ApiTemplate/ConfigureOptions/ConfigureSwaggerGenOptions.cs",
+            "Source/ApiTemplate/ConfigureOptions/ConfigureSwaggerUIOptions.cs",
+            "Source/ApiTemplate/OperationFilters/**/*"
           ]
         },
         {
           "condition": "(!Versioning)",
           "exclude": [
-            "Constants/ApiVersionName.cs",
+            "Source/ApiTemplate/ConfigureOptions/ConfigureApiVersioningOptions.cs",
+            "Source/ApiTemplate/Constants/ApiVersionName.cs",
             "Source/ApiTemplate/OperationFilters/**/*"
           ]
         },
         {
           "condition": "(!Redis)",
-          "exclude": [ "Source/ApiTemplate/Options/RedisOptions.cs" ]
+          "exclude": [
+            "Source/ApiTemplate/ConfigureOptions/ConfigureRedisCacheOptions.cs",
+            "Source/ApiTemplate/Options/RedisOptions.cs"
+          ]
+        },
+        {
+          "condition": "(!Serilog)",
+          "exclude": [ "Source/ApiTemplate/ConfigureOptions/ConfigureRequestLoggingOptions.cs" ]
         },
         {
           "condition": "(!IIS)",
@@ -89,11 +101,21 @@
         },
         {
           "condition": "(!CORS)",
-          "exclude": [ "Source/ApiTemplate/Constants/CorsPolicyName.cs" ]
+          "exclude": [
+            "Source/ApiTemplate/ConfigureOptions/ConfigureCorsOptions.cs",
+            "Source/ApiTemplate/Constants/CorsPolicyName.cs"
+          ]
         },
         {
           "condition": "(!ResponseCompression)",
-          "exclude": [ "Source/ApiTemplate/Options/CompressionOptions.cs" ]
+          "exclude": [
+            "Source/ApiTemplate/ConfigureOptions/ConfigureResponseCompressionOptions.cs",
+            "Source/ApiTemplate/Options/CompressionOptions.cs"
+          ]
+        },
+        {
+          "condition": "(!HstsPreload)",
+          "exclude": [ "Source/ApiTemplate/ConfigureOptions/ConfigureHstsOptions.cs" ]
         },
         {
           "condition": "(!RobotsTxt)",
@@ -132,7 +154,7 @@
           "condition": "(!OpenTelemetry)",
           "exclude": [
             "Source/ApiTemplate/Constants/OpenTelemetryAttributeName.cs",
-            "Source/ApiTemplate/Constants/OpenTelemetryHttpFlavour.cs"
+            "Source/ApiTemplate/TracerProviderBuilderExtensions.cs"
           ]
         }
       ]
